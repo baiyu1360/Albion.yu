@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重要事务管理 · TaskFlow</title>
+    <style>
+        :root {
+            --green-50: #f0fdf4;
+            --green-100: #dcfce7;
+            --green-200: #bbf7d0;
+            --green-300: #86efac;
+            --green-400: #4ade80;
+            --green-500: #22c55e;
+            --green-600: #16a34a;
+            --green-700: #15803d;
+            --green-800: #166534;
+            --green-900: #14532d;
+            --yellow-300: #fde047;
+            --yellow-400: #facc15;
+            --yellow-500: #eab308;
+            --yellow-600: #ca8a04;
+            --white: #ffffff;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --red-400: #f87171;
+            --red-500: #ef4444;
+            --orange-400: #fb923c;
+            --orange-500: #f97316;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --purple-400: #c084fc;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 30%, #fefce8 70%, #f0fdf4 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== Background Decoration ===== */
+        .bg-decoration {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+        .bg-circle-1 {
+            top: -120px; right: -80px;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .bg-circle-2 {
+            bottom: -100px; left: -60px;
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(250,204,21,0.12) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .bg-circle-3 {
+            top: 40%; left: 50%;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* ===== Container ===== */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            text-align: center;
+            padding: 32px 0 20px;
+        }
+        .header-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .header-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, var(--green-500), var(--green-600));
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(34,197,94,0.3);
+        }
+        .header-icon svg { width: 24px; height: 24px; stroke: white; }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--green-700), var(--green-900));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-date {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        /* ===== Stats Bar ===== */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-200);
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .stat-number.total { color: var(--green-600); }
+        .stat-number.active { color: var(--orange-500); }
+        .stat-number.urgent { color: var(--red-500); }
+        .stat-number.done { color: var(--gray-400); }
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== Action Bar ===== */
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--green-500), var(--green-600));
+            color: white;
+            box-shadow: 0 2px 8px rgba(34,197,94,0.25);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 4px 16px rgba(34,197,94,0.35);
+            transform: translateY(-1px);
+        }
+        .btn-yellow {
+            background: var(--yellow-400);
+            color: var(--gray-800);
+            box-shadow: 0 2px 8px rgba(250,204,21,0.3);
+        }
+        .btn-yellow:hover {
+            background: var(--yellow-500);
+            box-shadow: 0 4px 16px rgba(234,179,8,0.35);
+            transform: translateY(-1px);
+        }
+        .btn-outline {
+            background: var(--white);
+            color: var(--gray-700);
+            border: 2px solid var(--gray-200);
+        }
+        .btn-outline:hover {
+            border-color: var(--green-400);
+            color: var(--green-700);
+            background: var(--green-50);
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+            border-radius: var(--radius-sm);
+        }
+        .btn-icon {
+            width: 36px; height: 36px;
+            padding: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: var(--radius-sm);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--gray-100);
+            border-radius: var(--radius-md);
+            padding: 4px;
+        }
+        .filter-tab {
+            padding: 8px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            background: transparent;
+            color: var(--gray-600);
+            font-family: inherit;
+        }
+        .filter-tab.active {
+            background: var(--white);
+            color: var(--green-700);
+            box-shadow: var(--shadow-sm);
+            font-weight: 600;
+        }
+        .filter-tab:hover:not(.active) { color: var(--green-600); }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            background: var(--white);
+            transition: var(--transition);
+            font-family: inherit;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--green-400);
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
+        }
+        .search-box .search-icon {
+            position: absolute;
+            left: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            pointer-events: none;
+        }
+
+        /* ===== Modal Overlay ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            padding: 28px 32px;
+            width: 90%;
+            max-width: 520px;
+            box-shadow: var(--shadow-xl);
+            transform: translateY(20px);
+            transition: transform 0.25s;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-overlay.show .modal { transform: translateY(0); }
+        .modal h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--gray-900);
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px; right: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--gray-400);
+            padding: 4px;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        .modal-close:hover { color: var(--gray-700); background: var(--gray-100); }
+
+        /* ===== Form ===== */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-family: inherit;
+            transition: var(--transition);
+            background: var(--gray-50);
+            color: var(--gray-800);
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--green-400);
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
+            background: var(--white);
+        }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .priority-selector {
+            display: flex;
+            gap: 8px;
+        }
+        .priority-option {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 13px;
+            font-weight: 500;
+            background: var(--white);
+            font-family: inherit;
+        }
+        .priority-option:hover { border-color: var(--gray-300); }
+        .priority-option.low.selected { border-color: var(--blue-400); background: #eff6ff; color: var(--blue-500); }
+        .priority-option.medium.selected { border-color: var(--orange-400); background: #fff7ed; color: var(--orange-500); }
+        .priority-option.high.selected { border-color: var(--red-400); background: #fef2f2; color: var(--red-500); }
+        .priority-option.critical.selected { border-color: var(--purple-400); background: #faf5ff; color: #a855f7; }
+
+        .priority-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .priority-dot.low { background: var(--blue-400); }
+        .priority-dot.medium { background: var(--orange-400); }
+        .priority-dot.high { background: var(--red-500); }
+        .priority-dot.critical { background: #a855f7; }
+
+        /* ===== Task Card ===== */
+        .task-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .task-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-200);
+            border-left: 4px solid var(--green-400);
+            transition: var(--transition);
+            position: relative;
+            cursor: pointer;
+            animation: fadeInUp 0.3s ease both;
+        }
+        .task-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        .task-card.priority-low { border-left-color: var(--blue-400); }
+        .task-card.priority-medium { border-left-color: var(--orange-400); }
+        .task-card.priority-high { border-left-color: var(--red-500); }
+        .task-card.priority-critical { border-left-color: #a855f7; }
+        .task-card.completed {
+            opacity: 0.65;
+            border-left-color: var(--gray-300) !important;
+            background: var(--gray-50);
+        }
+        .task-card.completed .task-title { text-decoration: line-through; color: var(--gray-400); }
+        .task-card.expired { border-left-color: var(--red-500); animation: pulse 2s infinite; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+            50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+        }
+
+        .task-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .task-checkbox {
+            flex-shrink: 0;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--gray-300);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex; align-items: center; justify-content: center;
+            margin-top: 2px;
+            background: var(--white);
+        }
+        .task-checkbox:hover { border-color: var(--green-400); }
+        .task-checkbox.checked {
+            background: var(--green-500);
+            border-color: var(--green-500);
+        }
+        .task-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .task-body { flex: 1; min-width: 0; }
+        .task-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 2px;
+            word-break: break-word;
+        }
+        .task-description {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .task-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .tag-due {
+            background: var(--green-100);
+            color: var(--green-700);
+        }
+        .tag-overdue {
+            background: #fef2f2;
+            color: var(--red-500);
+            animation: pulse 2s infinite;
+        }
+        .tag-due-today {
+            background: #fefce8;
+            color: var(--yellow-600);
+        }
+        .tag-alarm {
+            background: #fefce8;
+            color: var(--yellow-600);
+        }
+        .tag-category {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+        .task-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .task-actions .btn-icon {
+            opacity: 0;
+            transition: var(--transition);
+        }
+        .task-card:hover .task-actions .btn-icon { opacity: 1; }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-400);
+        }
+        .empty-state svg { width: 80px; height: 80px; margin-bottom: 16px; opacity: 0.4; }
+        .empty-state h3 { font-size: 18px; color: var(--gray-500); margin-bottom: 8px; }
+        .empty-state p { font-size: 14px; }
+
+        /* ===== Toast ===== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            background: var(--white);
+            box-shadow: var(--shadow-lg);
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid var(--green-500);
+        }
+        .toast.error { border-left-color: var(--red-500); }
+        .toast.warning { border-left-color: var(--yellow-500); }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* ===== Alarm Notification Panel ===== */
+        .alarm-panel {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            box-shadow: var(--shadow-xl);
+            z-index: 300;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+            border: 2px solid var(--yellow-400);
+        }
+        .alarm-panel.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .alarm-panel .alarm-icon {
+            width: 64px; height: 64px;
+            background: #fefce8;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 32px;
+            animation: pulse 1.5s infinite;
+        }
+        .alarm-panel h2 { font-size: 18px; color: var(--gray-900); margin-bottom: 8px; }
+        .alarm-panel p { font-size: 14px; color: var(--gray-500); margin-bottom: 20px; }
+        .alarm-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 299;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .alarm-backdrop.show { opacity: 1; pointer-events: auto; }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 640px) {
+            .container { padding: 12px 14px; }
+            .header h1 { font-size: 22px; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .stat-number { font-size: 24px; }
+            .form-row { grid-template-columns: 1fr; }
+            .action-bar { flex-direction: column; }
+            .filter-tabs { width: 100%; justify-content: center; }
+            .search-box { width: 100%; }
+            .task-actions .btn-icon { opacity: 1; }
+            .modal { padding: 20px; width: 95%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Background Decorations -->
+<div class="bg-decoration bg-circle-1"></div>
+<div class="bg-decoration bg-circle-2"></div>
+<div class="bg-decoration bg-circle-3"></div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Alarm Backdrop & Panel -->
+<div class="alarm-backdrop" id="alarmBackdrop"></div>
+<div class="alarm-panel" id="alarmPanel">
+    <div class="alarm-icon">🔔</div>
+    <h2 id="alarmTitle">任务提醒</h2>
+    <p id="alarmMsg"></p>
+    <button class="btn btn-primary" onclick="dismissAlarm()">我知道了</button>
+    <button class="btn btn-outline" style="margin-left:8px" onclick="snoozeAlarm()">5分钟后提醒</button>
+</div>
+
+<!-- Modal Overlay -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- Main Content -->
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-logo">
+            <div class="header-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                    <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    <path d="M9 14l2 2 4-4"/>
+                </svg>
+            </div>
+            <h1>TaskFlow</h1>
+        </div>
+        <p class="header-date" id="headerDate"></p>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-number total" id="statTotal">0</div>
+            <div class="stat-label">全部事务</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number active" id="statActive">0</div>
+            <div class="stat-label">进行中</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number urgent" id="statUrgent">0</div>
+            <div class="stat-label">已逾期</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number done" id="statDone">0</div>
+            <div class="stat-label">已完成</div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <button class="btn btn-primary" onclick="openAddModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            新增事务
+        </button>
+        <div class="filter-tabs" id="filterTabs">
+            <button class="filter-tab active" data-filter="all">全部</button>
+            <button class="filter-tab" data-filter="active">进行中</button>
+            <button class="filter-tab" data-filter="urgent">紧急</button>
+            <button class="filter-tab" data-filter="completed">已完成</button>
+        </div>
+        <div class="search-box">
+            <span class="search-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            </span>
+            <input type="text" id="searchInput" placeholder="搜索事务..." oninput="renderTasks()">
+        </div>
+        <button class="btn btn-yellow btn-sm" onclick="checkAndTriggerAlarms()" title="检查提醒">
+            🔔 检查提醒
+        </button>
+    </div>
+
+    <!-- Task List -->
+    <div class="task-list" id="taskList"></div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <path d="M9 12h6M9 16h6"/>
+        </svg>
+        <h3>还没有事务记录</h3>
+        <p>点击「新增事务」按钮，开始管理你的重要任务吧 ✨</p>
+    </div>
+</div>
+
+<script>
+// ===== Data Store =====
+const STORAGE_KEY = 'taskflow_tasks';
+const SETTINGS_KEY = 'taskflow_settings';
+let tasks = [];
+let currentFilter = 'all';
+let editingId = null;
+let alarmCheckInterval = null;
+
+function loadTasks() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        tasks = raw ? JSON.parse(raw) : [];
+    } catch(e) {
+        tasks = [];
+    }
+}
+
+function saveTasks() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function loadSettings() {
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        return raw ? JSON.parse(raw) : { alarmEnabled: true, snoozeMinutes: 5 };
+    } catch(e) {
+        return { alarmEnabled: true, snoozeMinutes: 5 };
+    }
+}
+
+function saveSettings(settings) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+// ===== Helpers =====
+function generateId() {
+    return 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function formatDateTime(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const now = new Date();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    const weekDays = ['周日','周一','周二','周三','周四','周五','周六'];
+    const weekday = weekDays[d.getDay()];
+
+    // Today / Tomorrow
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const taskDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diffDays = Math.round((taskDay - today) / (1000 * 60 * 60 * 24));
+
+    let prefix = '';
+    if (diffDays === 0) prefix = '今天 ';
+    else if (diffDays === 1) prefix = '明天 ';
+    else if (diffDays === -1) prefix = '昨天 ';
+    else if (diffDays < 0) prefix = Math.abs(diffDays) + '天前 ';
+
+    return `${prefix}${month}/${day} ${weekday} ${hours}:${mins}`;
+}
+
+function getDueStatus(task) {
+    if (!task.dueDate || task.completed) return null;
+    const now = new Date();
+    const due = new Date(task.dueDate);
+    const diff = due - now;
+    const diffMinutes = Math.floor(diff / (1000 * 60));
+
+    if (diffMinutes < 0) return 'overdue';
+    if (diffMinutes < 60) return 'due-today';
+    if (diffMinutes < 1440) return 'due-today'; // within 24 hours
+    return 'upcoming';
+}
+
+function getPriorityLabel(priority) {
+    const map = { low: '低', medium: '中', high: '高', critical: '紧急' };
+    return map[priority] || '中';
+}
+
+function getCategoryLabel(cat) {
+    const map = {
+        work: '💼 工作', personal: '👤 个人', health: '🏥 健康',
+        finance: '💰 财务', study: '📚 学习', other: '📌 其他'
+    };
+    return map[cat] || cat;
+}
+
+// ===== Toast =====
+function showToast(msg, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = '0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2800);
+}
+
+// ===== Modal =====
+function openModal(title, contentHtml) {
+    const overlay = document.getElementById('modalOverlay');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h2 style="margin:0">${title}</h2>
+            <button class="btn-icon" onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--gray-400)">✕</button>
+        </div>
+        ${contentHtml}
+    `;
+    overlay.classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+    editingId = null;
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// ===== Form =====
+function openAddModal() {
+    editingId = null;
+    openModal('➕ 新增事务', getFormHTML());
+    initFormEvents();
+    // Default alarm to 15 min before due
+    const alarmInput = document.getElementById('formAlarm');
+    if (alarmInput) alarmInput.value = '15';
+}
+
+function openEditModal(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    editingId = taskId;
+    openModal('✏️ 编辑事务', getFormHTML(task));
+    initFormEvents();
+}
+
+function getFormHTML(task = null) {
+    const t = task || {};
+    return `
+        <form id="taskForm" onsubmit="handleFormSubmit(event)">
+            <div class="form-group">
+                <label>事务标题 *</label>
+                <input type="text" id="formTitle" value="${escapeHtml(t.title || '')}" placeholder="输入重要事务名称..." required maxlength="100">
+            </div>
+            <div class="form-group">
+                <label>详细描述</label>
+                <textarea id="formDesc" placeholder="补充说明、备注等（可选）" maxlength="500">${escapeHtml(t.description || '')}</textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>分类</label>
+                    <select id="formCategory">
+                        ${['work','personal','health','finance','study','other'].map(c =>
+                            `<option value="${c}" ${(t.category || 'work') === c ? 'selected' : ''}>${getCategoryLabel(c)}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>优先级</label>
+                    <div class="priority-selector" id="prioritySelector">
+                        ${['low','medium','high','critical'].map((p, i) => `
+                            <div class="priority-option ${p} ${(t.priority || 'medium') === p ? 'selected' : ''}" data-priority="${p}">
+                                <span class="priority-dot ${p}"></span>${['低','中','高','紧急'][i]}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <input type="hidden" id="formPriority" value="${t.priority || 'medium'}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>截止日期 & 时间</label>
+                    <input type="datetime-local" id="formDueDate" value="${t.dueDate || ''}">
+                </div>
+                <div class="form-group">
+                    <label>提前提醒（分钟）</label>
+                    <input type="number" id="formAlarm" value="${t.alarmMinutesBefore != null ? t.alarmMinutesBefore : ''}" placeholder="留空则不提醒" min="0" max="10080">
+                    <span style="font-size:11px;color:var(--gray-400)">设置后在截止时间前自动提醒</span>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+                <button type="button" class="btn btn-outline" onclick="closeModal()">取消</button>
+                <button type="submit" class="btn btn-primary">
+                    ${editingId ? '💾 保存修改' : '✅ 创建事务'}
+                </button>
+            </div>
+        </form>
+    `;
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function initFormEvents() {
+    const selector = document.getElementById('prioritySelector');
+    if (!selector) return;
+    const options = selector.querySelectorAll('.priority-option');
+    options.forEach(opt => {
+        opt.addEventListener('click', function() {
+            options.forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+            document.getElementById('formPriority').value = this.dataset.priority;
+        });
+    });
+}
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+    const title = document.getElementById('formTitle').value.trim();
+    const description = document.getElementById('formDesc').value.trim();
+    const category = document.getElementById('formCategory').value;
+    const priority = document.getElementById('formPriority').value;
+    const dueDate = document.getElementById('formDueDate').value;
+    const alarmMin = document.getElementById('formAlarm').value;
+
+    if (!title) { showToast('请输入事务标题', 'error'); return; }
+
+    const taskData = {
+        id: editingId || generateId(),
+        title,
+        description,
+        category,
+        priority,
+        dueDate: dueDate || null,
+        alarmMinutesBefore: alarmMin ? parseInt(alarmMin) : null,
+        completed: editingId ? (tasks.find(t => t.id === editingId)?.completed || false) : false,
+        createdAt: editingId ? (tasks.find(t => t.id === editingId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+        completedAt: editingId ? (tasks.find(t => t.id === editingId)?.completedAt || null) : null,
+        lastAlarmTriggered: editingId ? (tasks.find(t => t.id === editingId)?.lastAlarmTriggered || null) : null,
+    };
+
+    if (editingId) {
+        const idx = tasks.findIndex(t => t.id === editingId);
+        if (idx !== -1) tasks[idx] = taskData;
+        showToast('事务已更新 ✅');
+    } else {
+        tasks.unshift(taskData);
+        showToast('新事务已创建 🎉');
+    }
+
+    saveTasks();
+    closeModal();
+    renderAll();
+}
+
+// ===== Task Actions =====
+function toggleTask(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.completed = !task.completed;
+    task.completedAt = task.completed ? new Date().toISOString() : null;
+    saveTasks();
+    renderAll();
+    showToast(task.completed ? '事务已完成 🎉' : '已重新打开事务');
+}
+
+function deleteTask(taskId) {
+    if (!confirm('确定删除该事务吗？此操作不可撤销。')) return;
+    tasks = tasks.filter(t => t.id !== taskId);
+    saveTasks();
+    renderAll();
+    showToast('事务已删除', 'warning');
+}
+
+function clearAllCompleted() {
+    const completedCount = tasks.filter(t => t.completed).length;
+    if (completedCount === 0) { showToast('没有已完成的事务', 'warning'); return; }
+    if (!confirm(`确定清除所有已完成的事务吗？（共 ${completedCount} 条）`)) return;
+    tasks = tasks.filter(t => !t.completed);
+    saveTasks();
+    renderAll();
+    showToast(`已清除 ${completedCount} 条完成事务`);
+}
+
+// ===== Alarm System =====
+function checkAndTriggerAlarms() {
+    const settings = loadSettings();
+    if (!settings.alarmEnabled) return;
+
+    const now = new Date();
+    let triggered = false;
+
+    tasks.forEach(task => {
+        if (task.completed || !task.dueDate || task.alarmMinutesBefore == null) return;
+
+        const due = new Date(task.dueDate);
+        const alarmTime = new Date(due.getTime() - task.alarmMinutesBefore * 60 * 1000);
+
+        // Check if it's time to trigger and hasn't been triggered recently (within 1 minute)
+        if (now >= alarmTime) {
+            const lastTriggered = task.lastAlarmTriggered ? new Date(task.lastAlarmTriggered) : null;
+            if (!lastTriggered || (now - lastTriggered) > 60000) {
+                triggerAlarm(task);
+                task.lastAlarmTriggered = now.toISOString();
+                triggered = true;
+            }
+        }
+    });
+
+    if (triggered) saveTasks();
+    if (!triggered && arguments[0] === 'manual') {
+        showToast('当前没有需要提醒的事务 ✅', 'warning');
+    }
+}
+
+function triggerAlarm(task) {
+    // Show custom alarm panel
+    document.getElementById('alarmTitle').textContent = '🔔 ' + task.title;
+    document.getElementById('alarmMsg').textContent =
+        `分类: ${getCategoryLabel(task.category)} | 优先级: ${getPriorityLabel(task.priority)}` +
+        (task.dueDate ? ` | 截止: ${formatDateTime(task.dueDate)}` : '');
+    document.getElementById('alarmBackdrop').classList.add('show');
+    document.getElementById('alarmPanel').classList.add('show');
+
+    // Play alarm sound using Web Audio API
+    playAlarmSound();
+
+    // Browser notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('TaskFlow 提醒', {
+            body: `「${task.title}」即将到期！\n${formatDateTime(task.dueDate)}`,
+            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
+            tag: task.id,
+        });
+    }
+}
+
+let currentAlarmTaskId = null;
+function dismissAlarm() {
+    document.getElementById('alarmBackdrop').classList.remove('show');
+    document.getElementById('alarmPanel').classList.remove('show');
+    stopAlarmSound();
+}
+
+function snoozeAlarm() {
+    document.getElementById('alarmBackdrop').classList.remove('show');
+    document.getElementById('alarmPanel').classList.remove('show');
+    stopAlarmSound();
+
+    const settings = loadSettings();
+    // Find the task that triggered the alarm (last one with recent lastAlarmTriggered)
+    const task = tasks.filter(t => t.lastAlarmTriggered)
+        .sort((a, b) => new Date(b.lastAlarmTriggered) - new Date(a.lastAlarmTriggered))[0];
+    if (task) {
+        task.lastAlarmTriggered = null; // Reset so it can trigger again
+        task.alarmMinutesBefore = (task.alarmMinutesBefore || 15) + settings.snoozeMinutes;
+        saveTasks();
+    }
+    showToast(`已推迟提醒 ⏰`);
+}
+
+// ===== Alarm Sound (Web Audio API) =====
+let audioCtx = null;
+let alarmOscillators = [];
+
+function playAlarmSound() {
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        stopAlarmSound();
+
+        // Play a pleasant alternating tone pattern
+        const notes = [880, 660, 880, 660, 880, 660, 880, 660, 1047, 880];
+        const noteDuration = 0.2;
+        const totalDuration = notes.length * noteDuration;
+
+        notes.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+
+            const startTime = audioCtx.currentTime + i * noteDuration;
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
+            gain.gain.setValueAtTime(0.15, startTime + noteDuration * 0.7);
+            gain.gain.linearRampToValueAtTime(0, startTime + noteDuration);
+
+            osc.start(startTime);
+            osc.stop(startTime + noteDuration);
+            alarmOscillators.push(osc);
+        });
+
+        // Stop tracking after all notes finish
+        setTimeout(() => { alarmOscillators = []; }, totalDuration * 1000 + 200);
+    } catch(e) {
+        // Silently fail if audio not supported
+    }
+}
+
+function stopAlarmSound() {
+    alarmOscillators.forEach(osc => {
+        try { osc.stop(); } catch(e) {}
+    });
+    alarmOscillators = [];
+}
+
+// ===== Render =====
+function getFilteredTasks() {
+    const searchQuery = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
+
+    let filtered = [...tasks];
+
+    // Apply status filter
+    switch(currentFilter) {
+        case 'active':
+            filtered = filtered.filter(t => !t.completed);
+            break;
+        case 'urgent':
+            filtered = filtered.filter(t => !t.completed && getDueStatus(t) === 'overdue');
+            break;
+        case 'completed':
+            filtered = filtered.filter(t => t.completed);
+            break;
+    }
+
+    // Apply search
+    if (searchQuery) {
+        filtered = filtered.filter(t =>
+            t.title.toLowerCase().includes(searchQuery) ||
+            (t.description && t.description.toLowerCase().includes(searchQuery)) ||
+            (t.category && getCategoryLabel(t.category).toLowerCase().includes(searchQuery))
+        );
+    }
+
+    // Sort: overdue first, then by due date, then by creation date
+    filtered.sort((a, b) => {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        const aStatus = getDueStatus(a);
+        const bStatus = getDueStatus(b);
+        if (aStatus === 'overdue' && bStatus !== 'overdue') return -1;
+        if (aStatus !== 'overdue' && bStatus === 'overdue') return 1;
+        if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
+        if (a.dueDate) return -1;
+        if (b.dueDate) return 1;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    return filtered;
+}
+
+function renderTasks() {
+    const filtered = getFilteredTasks();
+    const taskList = document.getElementById('taskList');
+    const emptyState = document.getElementById('emptyState');
+
+    if (filtered.length === 0) {
+        taskList.innerHTML = '';
+        emptyState.style.display = 'block';
+    } else {
+        emptyState.style.display = 'none';
+        taskList.innerHTML = filtered.map((task, index) => {
+            const dueStatus = getDueStatus(task);
+            const isExpired = dueStatus === 'overdue';
+
+            let dueTagHtml = '';
+            if (task.dueDate && !task.completed) {
+                if (dueStatus === 'overdue') {
+                    dueTagHtml = `<span class="task-tag tag-overdue">⚠ 已逾期</span>`;
+                } else if (dueStatus === 'due-today') {
+                    dueTagHtml = `<span class="task-tag tag-due-today">⏰ 即将到期</span>`;
+                } else {
+                    dueTagHtml = `<span class="task-tag tag-due">📅 ${formatDateTime(task.dueDate)}</span>`;
+                }
+            } else if (task.dueDate && task.completed) {
+                dueTagHtml = `<span class="task-tag tag-due">📅 ${formatDateTime(task.dueDate)}</span>`;
+            }
+
+            const alarmTagHtml = (task.alarmMinutesBefore != null && !task.completed)
+                ? `<span class="task-tag tag-alarm">🔔 提前${task.alarmMinutesBefore}分钟</span>`
+                : '';
+
+            return `
+                <div class="task-card priority-${task.priority} ${task.completed ? 'completed' : ''} ${isExpired ? 'expired' : ''}"
+                     style="animation-delay:${index * 0.03}s"
+                     ondblclick="openEditModal('${task.id}')">
+                    <div class="task-header">
+                        <div class="task-checkbox ${task.completed ? 'checked' : ''}"
+                             onclick="event.stopPropagation(); toggleTask('${task.id}')"
+                             title="${task.completed ? '标记为未完成' : '标记为已完成'}">
+                        </div>
+                        <div class="task-body">
+                            <div class="task-title">${escapeHtml(task.title)}</div>
+                            ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
+                            <div class="task-meta">
+                                <span class="task-tag tag-category">${getCategoryLabel(task.category)}</span>
+                                <span class="task-tag" style="background:var(--gray-100)">
+                                    <span class="priority-dot ${task.priority}"></span>${getPriorityLabel(task.priority)}优先级
+                                </span>
+                                ${dueTagHtml}
+                                ${alarmTagHtml}
+                                ${task.completed && task.completedAt ? `<span style="font-size:11px;color:var(--gray-400)">✓ ${formatDateTime(task.completedAt)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <button class="btn btn-outline btn-icon btn-sm" title="编辑"
+                                    onclick="event.stopPropagation(); openEditModal('${task.id}')">
+                                ✏️
+                            </button>
+                            <button class="btn btn-outline btn-icon btn-sm" title="删除"
+                                    style="color:var(--red-400);border-color:var(--red-400)"
+                                    onclick="event.stopPropagation(); deleteTask('${task.id}')">
+                                🗑
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    updateStats();
+}
+
+function updateStats() {
+    const total = tasks.length;
+    const active = tasks.filter(t => !t.completed).length;
+    const urgent = tasks.filter(t => !t.completed && getDueStatus(t) === 'overdue').length;
+    const done = tasks.filter(t => t.completed).length;
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statUrgent').textContent = urgent;
+    document.getElementById('statDone').textContent = done;
+}
+
+function renderAll() {
+    renderTasks();
+}
+
+// ===== Filter & Search =====
+document.getElementById('filterTabs').addEventListener('click', function(e) {
+    if (e.target.classList.contains('filter-tab')) {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        currentFilter = e.target.dataset.filter;
+        renderTasks();
+    }
+});
+
+// ===== Keyboard Shortcuts =====
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+        switch(e.key.toLowerCase()) {
+            case 'n':
+                e.preventDefault();
+                openAddModal();
+                break;
+            case 'f':
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+                break;
+            case 'k':
+                e.preventDefault();
+                checkAndTriggerAlarms('manual');
+                break;
+        }
+    }
+    // Escape to close modal
+    if (e.key === 'Escape') {
+        closeModal();
+        dismissAlarm();
+    }
+});
+
+// ===== Init =====
+function init() {
+    // Update header date
+    const now = new Date();
+    const weekDays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+    document.getElementById('headerDate').textContent =
+        `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${weekDays[now.getDay()]}`;
+
+    loadTasks();
+    renderAll();
+
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        setTimeout(() => {
+            Notification.requestPermission();
+        }, 3000);
+    }
+
+    // Check alarms every 30 seconds
+    alarmCheckInterval = setInterval(() => {
+        checkAndTriggerAlarms();
+    }, 30000);
+
+    // Initial check after 2 seconds
+    setTimeout(() => checkAndTriggerAlarms(), 2000);
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (alarmCheckInterval) clearInterval(alarmCheckInterval);
+    stopAlarmSound();
+});
+
+// Start app
+init();
+</script>
+</body>
+</html>
